@@ -1,0 +1,264 @@
+# =============================================================================
+# GO BINARIES AND BUILD ARTIFACTS
+# =============================================================================
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# Build output
+dist/
+build/
+bin/
+
+# =============================================================================
+# ENVIRONMENT AND CONFIGURATION
+# =============================================================================
+# Environment files (keep .env.example, but ignore actual config)
+.env
+.env.local
+.env.production
+.env.staging
+.env.test
+.env.*.local
+
+# Configuration files with sensitive data
+config/production.yaml
+config/staging.yaml
+config/local.yaml
+secrets.yaml
+
+# =============================================================================
+# DATABASE AND MIGRATION FILES
+# =============================================================================
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps and backups
+*.sql.gz
+*.dump
+backups/
+dumps/
+migrations/backup/
+
+# Migration logs
+migration.log
+migration-*.log
+
+# Database connection files
+.pgpass
+.my.cnf
+
+# =============================================================================
+# DEVELOPMENT TOOLS
+# =============================================================================
+# GoLand/IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# =============================================================================
+# LOGS AND TEMPORARY FILES
+# =============================================================================
+# Log files
+*.log
+logs/
+log/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Cache directories
+.cache/
+cache/
+
+# =============================================================================
+# OPERATING SYSTEM FILES
+# =============================================================================
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msm
+*.msp
+
+# Linux
+*~
+
+# =============================================================================
+# SECURITY AND SECRETS
+# =============================================================================
+# Private keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# API keys and secrets
+.secrets
+api-keys.json
+credentials.json
+service-account.json
+
+# SSH keys
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# =============================================================================
+# DOCKER AND CONTAINERIZATION
+# =============================================================================
+# Docker
+.dockerignore
+docker-compose.override.yml
+docker-compose.local.yml
+.docker/
+
+# =============================================================================
+# MONITORING AND METRICS
+# =============================================================================
+# Prometheus metrics
+prometheus/
+grafana/data/
+*.prom
+
+# Performance profiles
+*.prof
+cpu.prof
+mem.prof
+trace.out
+
+# =============================================================================
+# TESTING AND COVERAGE
+# =============================================================================
+# Test coverage
+coverage.txt
+coverage.html
+coverage.out
+*.cover
+cover.html
+cover.out
+
+# Test reports
+test-reports/
+junit.xml
+
+# Benchmark results
+*.bench
+
+# =============================================================================
+# PACKAGE MANAGERS AND DEPENDENCIES
+# =============================================================================
+# Go modules (uncomment if you want to ignore vendor)
+# vendor/
+
+# Node.js (if using any Node tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =============================================================================
+# PROJECT SPECIFIC
+# =============================================================================
+# Local development database files
+dev.db
+development.db
+local.db
+
+# Local scripts
+scripts/local/
+run-local.sh
+deploy-local.sh
+
+# Documentation builds
+docs/build/
+site/
+
+# Binary output from builds
+db-migration
+db-migration.exe
+
+# Database migration tool specific
+.migration-lock
+migration-state.json
+
+# =============================================================================
+# BACKUP AND ARCHIVE FILES
+# =============================================================================
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+*.zip
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+
+# =============================================================================
+# EXAMPLE AND TEMPLATE FILES TO KEEP
+# =============================================================================
+# Keep these example files tracked
+!.env.example
+!config.example.yaml
+!docker-compose.example.yml
+!README.md
+!CHANGELOG.md
+!LICENSE
+!TODO.md
