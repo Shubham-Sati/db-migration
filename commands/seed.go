@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 
+	"chat-analytics-db-migration/configs"
 	"chat-analytics-db-migration/database"
 
 	"github.com/spf13/cobra"
@@ -16,6 +17,14 @@ func Seed() *cobra.Command {
 		Short: "Populate database with seed data",
 		Long:  "Insert initial/test data into chat and analytics service tables",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Printf("[Seed] Current environment: %s\n", configs.App.Env)
+
+			// Allow seeding in development and local environments
+			if configs.App.Env != "development" && configs.App.Env != "local" {
+				fmt.Printf("Warning: Environment is %s. Seeding is only allowed in development or local environments.\n", configs.App.Env)
+				return nil
+			}
+
 			// Establish database connection
 			dbConnection, sqlConnection := database.Connection()
 			defer sqlConnection.Close()
