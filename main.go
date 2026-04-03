@@ -21,11 +21,12 @@ func main() {
 
 	// Register all available CLI commands
 	// Each command handles a specific database operation
-	cmd.AddCommand(commands.DropTables()) // Drop all database tables
-	cmd.AddCommand(commands.Migrate())    // Run database migrations
-	cmd.AddCommand(commands.Seed())       // Populate tables with seed data
-	cmd.AddCommand(commands.Alter())      // Alter existing table structures
-	cmd.AddCommand(commands.RunServer())  // Start a test server (optional)
+	cmd.AddCommand(commands.DropTables())  // Drop all database tables
+	cmd.AddCommand(commands.Migrate())     // Run database migrations (old - creates tables)
+	cmd.AddCommand(commands.MigrateNew())  // New migration system with up/down/status
+	cmd.AddCommand(commands.Seed())        // Populate tables with seed data
+	cmd.AddCommand(commands.Alter())       // Alter existing table structures (deprecated - use migration)
+	cmd.AddCommand(commands.RunServer())   // Start a test server (optional)
 
 	// Execute the CLI command based on user input
 	// If command fails, panic to stop execution
