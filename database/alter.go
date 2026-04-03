@@ -8,6 +8,14 @@ import (
 // Currently returns empty slice - implement specific alter operations as needed
 func AlterAllTables(db *gorm.DB) []Migration {
 	alterOperations := []Migration{
+		// Add refresh_token column to users table for JWT refresh token storage
+		{
+			TableName: "users_refresh_token",
+			Run: func(tx *gorm.DB) error {
+				return tx.Exec("ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token TEXT").Error
+			},
+		},
+
 		// Example: Add new column to existing table
 		// {
 		// 	TableName: "users",
