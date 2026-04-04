@@ -13,7 +13,16 @@ import (
 func DropAllTables(db *gorm.DB) []Migration {
 	// Reverse order of creation to handle dependencies
 	dropOperations := []Migration{
-		// Drop analytics tables first (they depend on others)
+		// Drop migration history table first (no dependencies)
+		{
+			TableName: "migration_histories",
+			Run: func(tx *gorm.DB) error {
+				// Use DROP TABLE IF EXISTS to avoid errors if table doesn't exist
+				return tx.Exec("DROP TABLE IF EXISTS migration_histories CASCADE").Error
+			},
+		},
+		
+		// Drop analytics tables (they depend on others)
 		{
 			TableName: "analytics_user_metrics",
 			Run: func(tx *gorm.DB) error {

@@ -57,6 +57,7 @@ func GetAppliedMigrations(db *gorm.DB) (map[string]bool, error) {
 }
 
 // LoadMigrationFiles reads all migration files from the migrations directory
+// Supports both folder-based (new) and file-based (old) migration structures
 func LoadMigrationFiles(migrationsPath string) ([]MigrationFile, error) {
 	files, err := ioutil.ReadDir(migrationsPath)
 	if err != nil {
@@ -66,37 +67,67 @@ func LoadMigrationFiles(migrationsPath string) ([]MigrationFile, error) {
 	var migrations []MigrationFile
 
 	for _, file := range files {
-		// Skip directories and non-SQL files
-		if file.IsDir() || !strings.HasSuffix(file.Name(), ".sql") {
-			continue
+		// Check if it's a directory (new structure: VERSION_DESCRIPTION/up.sql, down.sql)
+		if file.IsDir() {
+			// Parse directory name: YYYYMMDD_HHMMSS_description
+			parts := strings.SplitN(file.Name(), "_", 3)
+			if len(parts) < 3 {
+				fmt.Printf("[Migration] Skipping invalid directory format: %s\n", file.Name())
+				continue
+			}
+
+			version := parts[0] + "_" + parts[1] // YYYYMMDD_HHMMSS
+			description := parts[2]
+
+			// Read up.sql and down.sql files
+			upPath := filepath.Join(migrationsPath, file.Name(), "up.sql")
+			downPath := filepath.Join(migrationsPath, file.Name(), "down.sql")
+
+			upSQL, err := ioutil.ReadFile(upPath)
+			if err != nil {
+				fmt.Printf("[Migration] Warning: Could not read up.sql for %s: %v\n", file.Name(), err)
+				continue
+			}
+
+			// down.sql is optional
+			downSQL, _ := ioutil.ReadFile(downPath)
+
+			migrations = append(migrations, MigrationFile{
+				Version:     version,
+				Filename:    file.Name(),
+				UpSQL:       string(upSQL),
+				DownSQL:     string(downSQL),
+				Description: description,
+			})
+		} else if strings.HasSuffix(file.Name(), ".sql") {
+			// Old structure: single SQL file with UP/DOWN sections
+			// Parse filename: YYYYMMDD_HHMMSS_description.sql
+			parts := strings.SplitN(file.Name(), "_", 3)
+			if len(parts) < 3 {
+				fmt.Printf("[Migration] Skipping invalid filename format: %s\n", file.Name())
+				continue
+			}
+
+			version := parts[0] + "_" + parts[1] // YYYYMMDD_HHMMSS
+			description := strings.TrimSuffix(parts[2], ".sql")
+
+			// Read file content
+			content, err := ioutil.ReadFile(filepath.Join(migrationsPath, file.Name()))
+			if err != nil {
+				return nil, fmt.Errorf("failed to read migration file %s: %w", file.Name(), err)
+			}
+
+			// Split UP and DOWN migrations
+			upSQL, downSQL := parseMigrationContent(string(content))
+
+			migrations = append(migrations, MigrationFile{
+				Version:     version,
+				Filename:    file.Name(),
+				UpSQL:       upSQL,
+				DownSQL:     downSQL,
+				Description: description,
+			})
 		}
-
-		// Parse filename: YYYYMMDD_HHMMSS_description.sql
-		parts := strings.SplitN(file.Name(), "_", 3)
-		if len(parts) < 3 {
-			fmt.Printf("[Migration] Skipping invalid filename format: %s\n", file.Name())
-			continue
-		}
-
-		version := parts[0] + "_" + parts[1] // YYYYMMDD_HHMMSS
-		description := strings.TrimSuffix(parts[2], ".sql")
-
-		// Read file content
-		content, err := ioutil.ReadFile(filepath.Join(migrationsPath, file.Name()))
-		if err != nil {
-			return nil, fmt.Errorf("failed to read migration file %s: %w", file.Name(), err)
-		}
-
-		// Split UP and DOWN migrations
-		upSQL, downSQL := parseMigrationContent(string(content))
-
-		migrations = append(migrations, MigrationFile{
-			Version:     version,
-			Filename:    file.Name(),
-			UpSQL:       upSQL,
-			DownSQL:     downSQL,
-			Description: description,
-		})
 	}
 
 	// Sort migrations by version (timestamp)

@@ -2,7 +2,7 @@ package commands
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -75,30 +75,30 @@ func migrateUp() *cobra.Command {
 			// Apply each migration in a transaction
 			for _, migration := range pending {
 				fmt.Printf("[Migration] Applying %s: %s\n", migration.Version, migration.Description)
-				
+
 				startTime := time.Now()
-				
+
 				// Start transaction
 				tx := dbConnection.Begin()
-				
+
 				// Execute UP migration
 				if err := tx.Exec(migration.UpSQL).Error; err != nil {
 					tx.Rollback()
 					return fmt.Errorf("failed to apply migration %s: %w", migration.Version, err)
 				}
-				
+
 				// Record in history
 				executionTime := time.Since(startTime).Milliseconds()
 				if err := database.RecordMigration(tx, migration, executionTime); err != nil {
 					tx.Rollback()
 					return err
 				}
-				
+
 				// Commit transaction
 				if err := tx.Commit().Error; err != nil {
 					return fmt.Errorf("failed to commit migration %s: %w", migration.Version, err)
 				}
-				
+
 				fmt.Printf("[Migration] ✅ Applied %s (%dms)\n", migration.Version, executionTime)
 			}
 
@@ -136,8 +136,8 @@ func migrateDown() *cobra.Command {
 			tx := dbConnection.Begin()
 
 			// Execute DOWN migration
-			if lastMigration.RollbackSQL != "" && 
-			   !contains(lastMigration.RollbackSQL, "Rollback not") {
+			if lastMigration.RollbackSQL != "" &&
+				!contains(lastMigration.RollbackSQL, "Rollback not") {
 				if err := tx.Exec(lastMigration.RollbackSQL).Error; err != nil {
 					tx.Rollback()
 					return fmt.Errorf("failed to rollback migration %s: %w", lastMigration.Version, err)
@@ -195,7 +195,7 @@ func migrateStatus() *cobra.Command {
 
 			fmt.Println("\n[Migration Status]")
 			fmt.Println("=====================================")
-			
+
 			if len(migrations) == 0 {
 				fmt.Println("No migration files found")
 				return nil
@@ -209,7 +209,7 @@ func migrateStatus() *cobra.Command {
 				fmt.Printf("%s | %s | %s\n", status, m.Version, m.Description)
 			}
 
-			fmt.Printf("\nTotal: %d migrations (%d applied, %d pending)\n", 
+			fmt.Printf("\nTotal: %d migrations (%d applied, %d pending)\n",
 				len(migrations), len(applied), len(migrations)-len(applied))
 
 			return nil
@@ -222,44 +222,71 @@ func migrateCreate() *cobra.Command {
 	return &cobra.Command{
 		Use:   "create [description]",
 		Short: "Create a new migration file",
-		Long:  "Creates a new timestamped migration file with UP and DOWN sections",
+		Long:  "Creates a new timestamped migration folder with separate up.sql and down.sql files",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			description := args[0]
-			
+
 			// Generate timestamp
 			timestamp := time.Now().Format("20060102_150405")
-			
-			// Create filename
-			filename := fmt.Sprintf("%s_%s.sql", timestamp, description)
-			filepath := filepath.Join(".", "migrations", filename)
-			
-			// Template content
-			template := `-- Migration: %s
+
+			// Create folder name
+			folderName := fmt.Sprintf("%s_%s", timestamp, description)
+			folderPath := filepath.Join(".", "migrations", folderName)
+
+			// Create migration folder
+			if err := os.MkdirAll(folderPath, 0755); err != nil {
+				return fmt.Errorf("failed to create migration folder: %w", err)
+			}
+
+			// Template for up.sql
+			upTemplate := `-- Migration: %s
 -- Description: %s
 -- Created: %s
+-- Direction: UP
 
--- UP
--- Add your forward migration here
-
-
--- DOWN
--- Add your rollback migration here
-
+-- Add your forward migration SQL statements here
+-- Example:
+-- ALTER TABLE users ADD COLUMN new_field VARCHAR(255);
+-- CREATE INDEX idx_new_field ON users(new_field);
 `
-			content := fmt.Sprintf(template, 
-				timestamp+"_"+description,
-				description,
-				time.Now().Format("2006-01-02 15:04:05"))
-			
-			// Write file
-			if err := writeFile(filepath, content); err != nil {
-				return fmt.Errorf("failed to create migration file: %w", err)
+
+			// Template for down.sql
+			downTemplate := `-- Migration: %s
+-- Description: %s
+-- Created: %s
+-- Direction: DOWN
+
+-- Add your rollback SQL statements here
+-- These should undo what the UP migration does
+-- Example:
+-- DROP INDEX IF EXISTS idx_new_field;
+-- ALTER TABLE users DROP COLUMN IF EXISTS new_field;
+`
+
+			createdAt := time.Now().Format("2006-01-02 15:04:05")
+			migrationName := timestamp + "_" + description
+
+			// Create up.sql file
+			upContent := fmt.Sprintf(upTemplate, migrationName, description, createdAt)
+			upPath := filepath.Join(folderPath, "up.sql")
+			if err := writeFile(upPath, upContent); err != nil {
+				return fmt.Errorf("failed to create up.sql file: %w", err)
 			}
-			
-			fmt.Printf("[Migration] Created new migration file: %s\n", filename)
-			fmt.Printf("[Migration] Edit the file to add your UP and DOWN SQL statements\n")
-			
+
+			// Create down.sql file
+			downContent := fmt.Sprintf(downTemplate, migrationName, description, createdAt)
+			downPath := filepath.Join(folderPath, "down.sql")
+			if err := writeFile(downPath, downContent); err != nil {
+				return fmt.Errorf("failed to create down.sql file: %w", err)
+			}
+
+			fmt.Printf("[Migration] Created new migration: %s\n", folderName)
+			fmt.Printf("[Migration] Files created:\n")
+			fmt.Printf("  - %s (apply migration)\n", upPath)
+			fmt.Printf("  - %s (rollback migration)\n", downPath)
+			fmt.Printf("[Migration] Edit these files to add your SQL statements\n")
+
 			return nil
 		},
 	}
@@ -282,5 +309,5 @@ func findSubstring(s, substr string) bool {
 // Helper to write file
 func writeFile(filepath, content string) error {
 	// Create file with proper permissions
-	return ioutil.WriteFile(filepath, []byte(content), 0644)
+	return os.WriteFile(filepath, []byte(content), 0644)
 }
